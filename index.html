@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semak Keputusan Permohonan SPK/ PPKI PPD MIRI</title>
+    <!-- Memuatkan Tailwind CSS untuk penggayaan -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Menggunakan font Inter */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Kesan transisi untuk butang dan elemen lain */
+        .transition-all {
+            transition: all 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
+
+    <main class="w-full max-w-lg">
+        <!-- Kotak Utama -->
+        <div class="bg-white rounded-xl shadow-lg p-6 sm:p-8">
+            <div class="text-center mb-8">
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">Semak Keputusan Permohonan SPK/ PPKI PPD MIRI</h1>
+            </div>
+
+            <!-- Borang Semakan -->
+            <form id="statusCheckForm" class="space-y-4">
+                <div>
+                    <label for="mykad" class="block text-sm font-medium text-gray-600 mb-1">Nombor MyKad Pemohon</label>
+                    <input type="text" id="mykad" name="mykad" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Contoh: 00122513XXXX" maxlength="12">
+                    <p class="text-xs text-gray-500 mt-1">Sila masukkan Nombor MyKad murid (12 digit) tanpa dash, contoh: <span class="font-semibold">181024138842</span></p>
+                </div>
+
+                <!-- Simulasi reCAPTCHA -->
+                <div class="flex items-center justify-between bg-gray-50 p-3 rounded-md border border-gray-200">
+                    <div class="flex items-center space-x-2">
+                        <input id="recaptcha" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <label for="recaptcha" class="text-sm text-gray-700">I'm not a robot</label>
+                    </div>
+                    <div class="text-xs text-gray-400">
+                        <img src="https://www.gstatic.com/recaptcha/api2/logo_48.png" alt="reCAPTCHA logo" class="h-8 w-8 opacity-50">
+                        <p class="text-center">reCAPTCHA</p>
+                    </div>
+                </div>
+
+                <!-- Butang Semak Status -->
+                <button type="submit" id="submitBtn" class="w-full bg-gray-400 text-white font-bold py-3 px-4 rounded-md cursor-not-allowed transition-all" disabled>
+                    Semak Status
+                </button>
+            </form>
+        </div>
+
+        <!-- Bahagian Paparan Keputusan (Sembunyi secara lalai) -->
+        <div id="resultContainer" class="bg-white rounded-xl shadow-lg p-6 sm:p-8 mt-6 hidden">
+             <div id="message" class="text-center text-red-500 font-medium mb-4"></div>
+             <table class="w-full text-left">
+                <tbody>
+                    <tr class="border-b">
+                        <td class="py-3 px-4 font-semibold text-gray-700 w-1/3">Nama</td>
+                        <td id="resultName" class="py-3 px-4 text-gray-800"></td>
+                    </tr>
+                    <tr class="border-b">
+                        <td class="py-3 px-4 font-semibold text-gray-700">Nombor MyKad</td>
+                        <td id="resultMyKad" class="py-3 px-4 text-gray-800"></td>
+                    </tr>
+                    <tr>
+                        <td class="py-3 px-4 font-semibold text-gray-700">Keputusan</td>
+                        <td id="resultStatus" class="py-3 px-4 font-bold"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center mt-10 text-xs text-gray-500 w-full max-w-lg">
+        <p>&copy; 2025 Unit Pendidikan Khas PPD Miri. All rights reserved.</p>
+        <p>Website crafted by <a href="#" class="text-blue-600 hover:underline">Optimai Solution</a></p>
+    </footer>
+
+    <script>
+        // --- DATA SIMULASI (Gantikan dengan pangkalan data sebenar) ---
+        const fakeDatabase = [
+            { name: "AHMAD ISKANDAR MIKAIL BIN ABDULLAH", mykad: "180708130099", status: "LULUS. SILA KUTIP SURAT" },
+            { name: "SITI NURHALIZA BINTI KAMARUDDIN", mykad: "181024138842", status: "DALAM PROSES" },
+            { name: "MUHAMMAD ZULKARNAIN BIN JAAFAR", mykad: "180115085541", status: "TIDAK LULUS. RUJUK PEJABAT" },
+            { name: "NUR AMIRA SYAHIRAH BINTI ZAHID", mykad: "180530016782", status: "LULUS. SILA KUTIP SURAT" },
+        ];
+
+        // --- ELEMEN DOM ---
+        const form = document.getElementById('statusCheckForm');
+        const mykadInput = document.getElementById('mykad');
+        const recaptchaCheckbox = document.getElementById('recaptcha');
+        const submitBtn = document.getElementById('submitBtn');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultName = document.getElementById('resultName');
+        const resultMyKad = document.getElementById('resultMyKad');
+        const resultStatus = document.getElementById('resultStatus');
+        const messageDiv = document.getElementById('message');
+
+        // --- FUNGSI ---
+
+        // Fungsi untuk menapis nama (privasi)
+        function maskName(name) {
+            const words = name.split(' ');
+            return words.map(word => {
+                if (word.length <= 2) return word;
+                return word[0] + '*'.repeat(word.length - 2) + word[word.length - 1];
+            }).join(' ');
+        }
+        
+        // Mengaktifkan atau menyahaktifkan butang hantar
+        function toggleSubmitButton() {
+            if (mykadInput.value.length === 12 && recaptchaCheckbox.checked) {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                submitBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            } else {
+                submitBtn.disabled = true;
+                submitBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                submitBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+
+        // Dengar perubahan pada input MyKad dan checkbox reCAPTCHA
+        mykadInput.addEventListener('input', toggleSubmitButton);
+        recaptchaCheckbox.addEventListener('change', toggleSubmitButton);
+
+        // Dengar pada event submit borang
+        form.addEventListener('submit', function(event) {
+            event.preventDefault(); // Halang borang daripada memuat semula halaman
+
+            // Tunjukkan status sedang memuat
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Menyemak...';
+            resultContainer.classList.add('hidden');
+            messageDiv.textContent = '';
+
+
+            // Simulasi masa menunggu panggilan ke server (1.5 saat)
+            setTimeout(() => {
+                const mykadValue = mykadInput.value;
+                const record = fakeDatabase.find(item => item.mykad === mykadValue);
+
+                if (record) {
+                    // Jika rekod dijumpai
+                    resultName.textContent = maskName(record.name);
+                    resultMyKad.textContent = record.mykad;
+                    resultStatus.textContent = record.status;
+                    
+                    // Tukar warna teks status berdasarkan keputusan
+                    resultStatus.classList.remove('text-green-600', 'text-yellow-600', 'text-red-600');
+                    if (record.status.startsWith('LULUS')) {
+                        resultStatus.classList.add('text-green-600');
+                    } else if (record.status.startsWith('DALAM PROSES')) {
+                        resultStatus.classList.add('text-yellow-600');
+                    } else {
+                        resultStatus.classList.add('text-red-600');
+                    }
+                    
+                    resultContainer.classList.remove('hidden');
+                    // Sembunyikan jadual jika mesej ralat dipaparkan
+                    resultContainer.querySelector('table').style.display = 'table';
+                } else {
+                    // Jika rekod tidak dijumpai
+                    messageDiv.textContent = 'Maaf, maklumat tidak dijumpai. Sila pastikan Nombor MyKad adalah betul.';
+                    resultContainer.classList.remove('hidden');
+                    resultContainer.querySelector('table').style.display = 'none';
+                }
+
+                // Kembalikan butang ke keadaan asal
+                submitBtn.textContent = 'Semak Status';
+                toggleSubmitButton(); // Tetapkan semula status butang berdasarkan input semasa
+
+            }, 1500);
+        });
+    </script>
+</body>
+</html>
